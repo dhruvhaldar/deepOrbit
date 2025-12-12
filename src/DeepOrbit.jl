@@ -8,7 +8,9 @@ const mu = 398600.4418       # Earth's gravitational parameter [km^3/s^2]
 const J2 = 0.00108262668     # Second zonal harmonic
 const omega_e = 7.2921159e-5 # Earth's rotation rate [rad/s]
 
-export Re, mu, J2, omega_e, propagate, eci_to_geodetic
+export Re, mu, J2, omega_e, propagate, eci_to_geodetic, generate_ground_track_svg
+
+include("Visualizations.jl")
 
 """
     state_derivative(t, state)

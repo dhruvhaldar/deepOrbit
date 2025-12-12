@@ -41,8 +41,19 @@ output_file = "ground_track.csv"
 writedlm(output_file, output_data, ',')
 println("Results saved to $output_file")
 
-# Print first and last few points
+
+# Validating results
 println("First 5 points:")
 display(output_data[1:5, :])
-println("\nLast 5 points:")
-display(output_data[end-4:end, :])
+
+# --- Plotting ---
+println("\nGenerating plot...")
+
+# Extract Lat/Lon vectors
+lats = output_data[:, 2]
+lons = output_data[:, 3]
+plot_file = "ground_track.svg"
+
+generate_ground_track_svg(lats, lons, plot_file)
+println("Plot saved to $plot_file")
+

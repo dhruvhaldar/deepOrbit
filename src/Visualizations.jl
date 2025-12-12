@@ -1,0 +1,80 @@
+"""
+    generate_ground_track_svg(lats, lons, filename)
+
+Generates a standalone SVG file visualizing the satellite ground track.
+Handles the International Date Line crossing by creating discontinuous paths.
+"""
+function generate_ground_track_svg(lats, lons, filename)
+    # Simple Equirectangular projection
+    # Lon: -180 to 180 -> X: 0 to width
+    # Lat: -90 to 90   -> Y: height to 0 (SVG Y is down)
+    
+    width = 1000
+    height = 500
+    
+    function scale_x(lon)
+        return (lon + 180.0) / 360.0 * width
+    end
+    
+    function scale_y(lat)
+        return (1.0 - (lat + 90.0) / 180.0) * height
+    end
+    
+    # Build SVG Path(s)
+    path_d = ""
+    if length(lats) > 0
+        x0 = scale_x(lons[1])
+        y0 = scale_y(lats[1])
+        path_d *= "M $x0 $y0 "
+        
+        for i in 2:length(lats)
+            lat = lats[i]
+            lon = lons[i]
+            prev_lon = lons[i-1]
+            
+            # Check for Date Line crossing (large jump in Longitude)
+            if abs(lon - prev_lon) > 300.0
+                # Start new path segment
+                x = scale_x(lon)
+                y = scale_y(lat)
+                path_d *= "M $x $y "
+            else
+                x = scale_x(lon)
+                y = scale_y(lat)
+                path_d *= "L $x $y "
+            end
+        end
+    end
+    
+    # Standalone SVG Content
+    svg_content = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <svg width="$width" height="$height" viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg">
+        <style>
+            .background { fill: #001f3f; } /* Deep Ocean Blue */
+            .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
+            .grid { stroke: #333; stroke-width: 1; stroke-dasharray: 4; }
+            .axis-label { fill: #888; font-family: sans-serif; font-size: 12px; }
+            .title { fill: #eee; font-family: sans-serif; font-size: 16px; text-anchor: middle; }
+        </style>
+        
+        <!-- Background -->
+        <rect width="100%" height="100%" class="background" />
+        
+        <!-- Grid Lines -->
+        <line x1="0" y1="$(height/2)" x2="$width" y2="$(height/2)" class="grid" /> <!-- Equator -->
+        <line x1="$(width/2)" y1="0" x2="$(width/2)" y2="$height" class="grid" /> <!-- Prime Meridian -->
+        
+        <!-- Ground Track -->
+        <path d="$path_d" class="track" />
+        
+        <!-- Labels & Title -->
+        <text x="$(width/2)" y="25" class="title">DeepOrbit Ground Track</text>
+        <text x="5" y="$(height/2 - 5)" class="axis-label">Equator</text>
+        <text x="$(width/2 + 5)" y="$(height - 10)" class="axis-label">Prime Meridian</text>
+    </svg>
+    """
+    
+    open(filename, "w") do f
+        write(f, svg_content)
+    end
+end
