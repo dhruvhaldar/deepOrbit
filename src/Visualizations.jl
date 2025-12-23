@@ -22,11 +22,16 @@ function generate_ground_track_svg(lats, lons, filename)
     
     # Build SVG Path(s)
     path_d = ""
+    markers = ""
+
     if length(lats) > 0
         x0 = scale_x(lons[1])
         y0 = scale_y(lats[1])
         path_d *= "M $x0 $y0 "
         
+        # Start Marker (Green Circle)
+        markers *= """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>"""
+
         for i in 2:length(lats)
             lat = lats[i]
             lon = lons[i]
@@ -44,11 +49,18 @@ function generate_ground_track_svg(lats, lons, filename)
                 path_d *= "L $x $y "
             end
         end
+
+        # End Marker (Red Circle)
+        xe = scale_x(lons[end])
+        ye = scale_y(lats[end])
+        markers *= """<circle cx="$xe" cy="$ye" r="4" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></circle>"""
     end
     
     # Standalone SVG Content
     svg_content = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <svg width="$width" height="$height" viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg">
+        <title>Satellite Ground Track</title>
+        <desc>A map displaying the satellite's path over the Earth. The path starts at the green marker and ends at the red marker.</desc>
         <style>
             .background { fill: #001f3f; } /* Deep Ocean Blue */
             .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
@@ -67,6 +79,9 @@ function generate_ground_track_svg(lats, lons, filename)
         <!-- Ground Track -->
         <path d="$path_d" class="track" />
         
+        <!-- Markers -->
+        $markers
+
         <!-- Labels & Title -->
         <text x="$(width/2)" y="25" class="title">DeepOrbit Ground Track</text>
         <text x="5" y="$(height/2 - 5)" class="axis-label">Equator</text>
