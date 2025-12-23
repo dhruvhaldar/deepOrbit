@@ -69,6 +69,25 @@ Returns a tuple (times, states).
 """
 function propagate(initial_state, t_span, dt)
     t0, tf = t_span
+
+    # Security Validation: Prevent Memory Exhaustion (DoS) and Infinite Loops
+    if dt <= 0
+        throw(ArgumentError("Time step dt must be positive. Got $dt"))
+    end
+
+    if tf < t0
+        throw(ArgumentError("Time span must be increasing (tf >= t0). Got t0=$t0, tf=$tf"))
+    end
+
+    # Check for excessive memory allocation
+    # 10 million steps with 6 Float64s is ~480MB, which is a safe upper bound.
+    estimated_steps = (tf - t0) / dt
+    MAX_STEPS = 10_000_000
+
+    if estimated_steps > MAX_STEPS
+        throw(ArgumentError("Simulation requires too many steps ($(round(estimated_steps)). > $MAX_STEPS). Increase dt or decrease t_span to prevent memory exhaustion."))
+    end
+
     times = collect(t0:dt:tf)
     n_steps = length(times)
     
