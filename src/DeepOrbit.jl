@@ -28,12 +28,6 @@ function state_derivative(t, state)
     
     x, y, z = r_vec
     
-    # J2 Perturbation terms
-    # Formula from "Fundamentals of Astrodynamics and Applications", Vallado, or similar standard texts
-    # a_J2_x = - (3/2) * J2 * (mu/r^2) * (Re/r)^2 * (x/r) * (1 - 5*(z/r)^2)
-    # a_J2_y = - (3/2) * J2 * (mu/r^2) * (Re/r)^2 * (y/r) * (1 - 5*(z/r)^2)
-    # a_J2_z = - (3/2) * J2 * (mu/r^2) * (Re/r)^2 * (z/r) * (3 - 5*(z/r)^2)
-    
     # Precompute common terms
     c1 = -mu / r3
     c2 = 1.5 * J2 * mu * Re^2 / (r2 * r3)
@@ -45,6 +39,43 @@ function state_derivative(t, state)
     az = c1 * z + c2 * z * (5 * z2_r2 - 3)
     
     return [v_vec[1], v_vec[2], v_vec[3], ax, ay, az]
+end
+
+"""
+    state_derivative!(dstate, t, state)
+
+In-place version of state_derivative. Updates dstate.
+"""
+function state_derivative!(dstate, t, state)
+    x = state[1]
+    y = state[2]
+    z = state[3]
+    vx = state[4]
+    vy = state[5]
+    vz = state[6]
+
+    r2 = x*x + y*y + z*z
+    r_norm = sqrt(r2)
+    r3 = r2 * r_norm
+
+    # J2 Perturbation terms
+    c1 = -mu / r3
+    c2 = 1.5 * J2 * mu * Re^2 / (r2 * r3)
+
+    z2_r2 = (z / r_norm)^2
+    term_z = 5 * z2_r2
+
+    ax = c1 * x + c2 * x * (term_z - 1)
+    ay = c1 * y + c2 * y * (term_z - 1)
+    az = c1 * z + c2 * z * (term_z - 3)
+
+    dstate[1] = vx
+    dstate[2] = vy
+    dstate[3] = vz
+    dstate[4] = ax
+    dstate[5] = ay
+    dstate[6] = az
+    return nothing
 end
 
 """
@@ -62,6 +93,32 @@ function rk4_step(f, t, y, dt)
 end
 
 """
+    rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
+
+In-place Runge-Kutta 4 step using pre-allocated buffers.
+"""
+function rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
+    # k1 = f(t, y)
+    f!(k1, t, y)
+
+    # k2 = f(t + 0.5*dt, y + 0.5*dt*k1)
+    @. temp_state = y + 0.5 * dt * k1
+    f!(k2, t + 0.5 * dt, temp_state)
+
+    # k3 = f(t + 0.5*dt, y + 0.5*dt*k2)
+    @. temp_state = y + 0.5 * dt * k2
+    f!(k3, t + 0.5 * dt, temp_state)
+
+    # k4 = f(t + dt, y + dt*k3)
+    @. temp_state = y + dt * k3
+    f!(k4, t + dt, temp_state)
+
+    # y_next = y + (dt/6)*(k1 + 2k2 + 2k3 + k4)
+    @. next_state = y + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+    return nothing
+end
+
+"""
     propagate(initial_state, t_span, dt)
 
 Propagates the orbit from `t_span[1]` to `t_span[2]` with time step `dt`.
@@ -70,7 +127,7 @@ Returns a tuple (times, states).
 function propagate(initial_state, t_span, dt)
     t0, tf = t_span
 
-    # Security Validation: Prevent Memory Exhaustion (DoS) and Infinite Loops
+    # Security Validation
     if dt <= 0
         throw(ArgumentError("Time step dt must be positive. Got $dt"))
     end
@@ -79,8 +136,6 @@ function propagate(initial_state, t_span, dt)
         throw(ArgumentError("Time span must be increasing (tf >= t0). Got t0=$t0, tf=$tf"))
     end
 
-    # Check for excessive memory allocation
-    # 10 million steps with 6 Float64s is ~480MB, which is a safe upper bound.
     estimated_steps = (tf - t0) / dt
     MAX_STEPS = 10_000_000
 
@@ -92,16 +147,27 @@ function propagate(initial_state, t_span, dt)
     n_steps = length(times)
     
     # Pre-allocate states array
-    # Rows are steps, columns are state variables (6)
     states = Vector{Vector{Float64}}(undef, n_steps)
-    states[1] = initial_state
+    states[1] = copy(initial_state)
     
-    current_state = initial_state
+    # Reusable buffers to avoid allocation in loop
+    current_state = copy(initial_state)
+    next_state = Vector{Float64}(undef, 6)
+    k1 = Vector{Float64}(undef, 6)
+    k2 = Vector{Float64}(undef, 6)
+    k3 = Vector{Float64}(undef, 6)
+    k4 = Vector{Float64}(undef, 6)
+    temp_state = Vector{Float64}(undef, 6)
     
     for i in 1:(n_steps - 1)
         t = times[i]
-        current_state = rk4_step(state_derivative, t, current_state, dt)
-        states[i+1] = current_state
+        rk4_step!(next_state, state_derivative!, t, current_state, dt, k1, k2, k3, k4, temp_state)
+
+        # Save result (must allocate a new vector for the results array)
+        states[i+1] = copy(next_state)
+
+        # Update current_state for next step (copy without allocation)
+        copyto!(current_state, next_state)
     end
     
     return times, states
