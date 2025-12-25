@@ -8,6 +8,9 @@ const mu = 398600.4418       # Earth's gravitational parameter [km^3/s^2]
 const J2 = 0.00108262668     # Second zonal harmonic
 const omega_e = 7.2921159e-5 # Earth's rotation rate [rad/s]
 
+# Precomputed constants
+const J2_coef = 1.5 * J2 * mu * Re^2
+
 export Re, mu, J2, omega_e, propagate, eci_to_geodetic, generate_ground_track_svg
 
 include("Visualizations.jl")
@@ -30,7 +33,7 @@ function state_derivative(t, state)
     
     # Precompute common terms
     c1 = -mu / r3
-    c2 = 1.5 * J2 * mu * Re^2 / (r2 * r3)
+    c2 = J2_coef / (r2 * r3)
     
     z2_r2 = (z / r_norm)^2
     
@@ -47,12 +50,14 @@ end
 In-place version of state_derivative. Updates dstate.
 """
 function state_derivative!(dstate, t, state)
-    x = state[1]
-    y = state[2]
-    z = state[3]
-    vx = state[4]
-    vy = state[5]
-    vz = state[6]
+    @inbounds begin
+        x = state[1]
+        y = state[2]
+        z = state[3]
+        vx = state[4]
+        vy = state[5]
+        vz = state[6]
+    end
 
     r2 = x*x + y*y + z*z
     r_norm = sqrt(r2)
@@ -60,7 +65,7 @@ function state_derivative!(dstate, t, state)
 
     # J2 Perturbation terms
     c1 = -mu / r3
-    c2 = 1.5 * J2 * mu * Re^2 / (r2 * r3)
+    c2 = J2_coef / (r2 * r3)
 
     z2_r2 = (z / r_norm)^2
     term_z = 5 * z2_r2
@@ -69,12 +74,14 @@ function state_derivative!(dstate, t, state)
     ay = c1 * y + c2 * y * (term_z - 1)
     az = c1 * z + c2 * z * (term_z - 3)
 
-    dstate[1] = vx
-    dstate[2] = vy
-    dstate[3] = vz
-    dstate[4] = ax
-    dstate[5] = ay
-    dstate[6] = az
+    @inbounds begin
+        dstate[1] = vx
+        dstate[2] = vy
+        dstate[3] = vz
+        dstate[4] = ax
+        dstate[5] = ay
+        dstate[6] = az
+    end
     return nothing
 end
 
@@ -102,19 +109,19 @@ function rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
     f!(k1, t, y)
 
     # k2 = f(t + 0.5*dt, y + 0.5*dt*k1)
-    @. temp_state = y + 0.5 * dt * k1
+    @inbounds @. temp_state = y + 0.5 * dt * k1
     f!(k2, t + 0.5 * dt, temp_state)
 
     # k3 = f(t + 0.5*dt, y + 0.5*dt*k2)
-    @. temp_state = y + 0.5 * dt * k2
+    @inbounds @. temp_state = y + 0.5 * dt * k2
     f!(k3, t + 0.5 * dt, temp_state)
 
     # k4 = f(t + dt, y + dt*k3)
-    @. temp_state = y + dt * k3
+    @inbounds @. temp_state = y + dt * k3
     f!(k4, t + dt, temp_state)
 
     # y_next = y + (dt/6)*(k1 + 2k2 + 2k3 + k4)
-    @. next_state = y + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+    @inbounds @. next_state = y + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
     return nothing
 end
 
@@ -143,7 +150,7 @@ function propagate(initial_state, t_span, dt)
         throw(ArgumentError("Simulation requires too many steps ($(round(estimated_steps)). > $MAX_STEPS). Increase dt or decrease t_span to prevent memory exhaustion."))
     end
 
-    times = collect(t0:dt:tf)
+    times = t0:dt:tf
     n_steps = length(times)
     
     # Pre-allocate states array
@@ -159,7 +166,7 @@ function propagate(initial_state, t_span, dt)
     k4 = Vector{Float64}(undef, 6)
     temp_state = Vector{Float64}(undef, 6)
     
-    for i in 1:(n_steps - 1)
+    @inbounds for i in 1:(n_steps - 1)
         t = times[i]
         rk4_step!(next_state, state_derivative!, t, current_state, dt, k1, k2, k3, k4, temp_state)
 
