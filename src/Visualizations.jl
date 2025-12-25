@@ -5,6 +5,10 @@ Generates a standalone SVG file visualizing the satellite ground track.
 Handles the International Date Line crossing by creating discontinuous paths.
 """
 function generate_ground_track_svg(lats, lons, filename)
+    if length(lats) != length(lons)
+        throw(ArgumentError("Vectors lats and lons must have the same length. Got $(length(lats)) and $(length(lons))."))
+    end
+
     # Simple Equirectangular projection
     # Lon: -180 to 180 -> X: 0 to width
     # Lat: -90 to 90   -> Y: height to 0 (SVG Y is down)
@@ -21,16 +25,16 @@ function generate_ground_track_svg(lats, lons, filename)
     end
     
     # Build SVG Path(s)
-    path_d = ""
-    markers = ""
+    path_d = IOBuffer()
+    markers = IOBuffer()
 
     if length(lats) > 0
         x0 = scale_x(lons[1])
         y0 = scale_y(lats[1])
-        path_d *= "M $x0 $y0 "
+        print(path_d, "M $x0 $y0 ")
         
         # Start Marker (Green Circle)
-        markers *= """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>"""
+        print(markers, """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>""")
 
         for i in 2:length(lats)
             lat = lats[i]
@@ -42,25 +46,28 @@ function generate_ground_track_svg(lats, lons, filename)
                 # Start new path segment
                 x = scale_x(lon)
                 y = scale_y(lat)
-                path_d *= "M $x $y "
+                print(path_d, "M $x $y ")
             else
                 x = scale_x(lon)
                 y = scale_y(lat)
-                path_d *= "L $x $y "
+                print(path_d, "L $x $y ")
             end
         end
 
         # End Marker (Red Circle)
         xe = scale_x(lons[end])
         ye = scale_y(lats[end])
-        markers *= """<circle cx="$xe" cy="$ye" r="4" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></circle>"""
+        print(markers, """<circle cx="$xe" cy="$ye" r="4" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></circle>""")
     end
     
+    path_d_str = String(take!(path_d))
+    markers_str = String(take!(markers))
+
     # Standalone SVG Content
     svg_content = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-    <svg width="$width" height="$height" viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg">
-        <title>Satellite Ground Track</title>
-        <desc>A map displaying the satellite's path over the Earth. The path starts at the green marker and ends at the red marker.</desc>
+    <svg width="$width" height="$height" viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Satellite Ground Track</title>
+        <desc id="svg-desc">A map displaying the satellite's path over the Earth. The path starts at the green marker and ends at the red marker.</desc>
         <style>
             .background { fill: #001f3f; } /* Deep Ocean Blue */
             .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
@@ -70,17 +77,19 @@ function generate_ground_track_svg(lats, lons, filename)
         </style>
         
         <!-- Background -->
-        <rect width="100%" height="100%" class="background" />
+        <rect width="100%" height="100%" class="background" aria-hidden="true" />
         
         <!-- Grid Lines -->
-        <line x1="0" y1="$(height/2)" x2="$width" y2="$(height/2)" class="grid" /> <!-- Equator -->
-        <line x1="$(width/2)" y1="0" x2="$(width/2)" y2="$height" class="grid" /> <!-- Prime Meridian -->
+        <line x1="0" y1="$(height/2)" x2="$width" y2="$(height/2)" class="grid" aria-hidden="true" /> <!-- Equator -->
+        <line x1="$(width/2)" y1="0" x2="$(width/2)" y2="$height" class="grid" aria-hidden="true" /> <!-- Prime Meridian -->
         
         <!-- Ground Track -->
-        <path d="$path_d" class="track" />
+        <path d="$path_d_str" class="track">
+            <title>Satellite Path</title>
+        </path>
         
         <!-- Markers -->
-        $markers
+        $markers_str
 
         <!-- Labels & Title -->
         <text x="$(width/2)" y="25" class="title">DeepOrbit Ground Track</text>
