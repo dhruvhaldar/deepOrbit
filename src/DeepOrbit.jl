@@ -143,6 +143,10 @@ function propagate(initial_state, t_span, dt)
         throw(ArgumentError("Time span must be increasing (tf >= t0). Got t0=$t0, tf=$tf"))
     end
 
+    if length(initial_state) != 6
+        throw(ArgumentError("Initial state must have exactly 6 elements [x, y, z, vx, vy, vz]. Got $(length(initial_state))."))
+    end
+
     estimated_steps = (tf - t0) / dt
     MAX_STEPS = 10_000_000
 
