@@ -54,10 +54,13 @@ function generate_ground_track_svg(lats, lons, filename)
             end
         end
 
-        # End Marker (Red Circle)
+        # End Marker (Red Square)
         xe = scale_x(lons[end])
         ye = scale_y(lats[end])
-        print(markers, """<circle cx="$xe" cy="$ye" r="4" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></circle>""")
+        # Center the square (8x8) at (xe, ye)
+        rect_x = xe - 4
+        rect_y = ye - 4
+        print(markers, """<rect x="$rect_x" y="$rect_y" width="8" height="8" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></rect>""")
     end
     
     path_d_str = String(take!(path_d))
@@ -67,7 +70,7 @@ function generate_ground_track_svg(lats, lons, filename)
     svg_content = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
     <svg width="$width" height="$height" viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
         <title id="svg-title">Satellite Ground Track</title>
-        <desc id="svg-desc">A map displaying the satellite's path over the Earth. The path starts at the green marker and ends at the red marker.</desc>
+        <desc id="svg-desc">A map displaying the satellite's path over the Earth. The path starts at the green circle and ends at the red square.</desc>
         <style>
             .background { fill: #001f3f; } /* Deep Ocean Blue */
             .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
