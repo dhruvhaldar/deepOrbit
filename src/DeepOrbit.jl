@@ -60,19 +60,23 @@ function state_derivative!(dstate, t, state)
     end
 
     r2 = x*x + y*y + z*z
+
+    # Optimization: Precompute inverse square distance to replace divisions with multiplications
+    inv_r2 = 1.0 / r2
     r_norm = sqrt(r2)
-    r3 = r2 * r_norm
+    inv_r3 = inv_r2 / r_norm
 
     # J2 Perturbation terms
-    c1 = -mu / r3
-    c2 = J2_coef / (r2 * r3)
+    c1 = -mu * inv_r3
+    c2 = J2_coef * inv_r3 * inv_r2
 
-    z2_r2 = (z / r_norm)^2
+    z2_r2 = (z * z) * inv_r2
     term_z = 5 * z2_r2
 
-    ax = c1 * x + c2 * x * (term_z - 1)
-    ay = c1 * y + c2 * y * (term_z - 1)
-    az = c1 * z + c2 * z * (term_z - 3)
+    # Factor out common terms
+    ax = x * (c1 + c2 * (term_z - 1))
+    ay = y * (c1 + c2 * (term_z - 1))
+    az = z * (c1 + c2 * (term_z - 3))
 
     @inbounds begin
         dstate[1] = vx
