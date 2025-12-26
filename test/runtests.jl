@@ -10,6 +10,23 @@ using LinearAlgebra
         @test J2 > 0
     end
 
+    @testset "Input Validation" begin
+        # Test valid input
+        initial_state = [7000.0, 0.0, 0.0, 0.0, 7.5, 0.0]
+        t_span = (0.0, 10.0)
+        dt = 1.0
+        times, states = propagate(initial_state, t_span, dt)
+        @test length(times) == length(states)
+
+        # Test invalid state vector length (too short)
+        short_state = [7000.0, 0.0, 0.0]
+        @test_throws ArgumentError propagate(short_state, t_span, dt)
+
+        # Test invalid state vector length (too long)
+        long_state = zeros(7)
+        @test_throws ArgumentError propagate(long_state, t_span, dt)
+    end
+
     @testset "Circular Orbit Energy Conservation" begin
         # For a circular orbit without perturbations, energy should be constant.
         # With J2, it's not strictly constant but should be close over one orbit.
