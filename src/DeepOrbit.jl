@@ -135,6 +135,10 @@ function propagate(initial_state, t_span, dt)
     t0, tf = t_span
 
     # Security Validation
+    if length(initial_state) != 6
+        throw(ArgumentError("Initial state must have exactly 6 elements (pos + vel). Got $(length(initial_state))"))
+    end
+
     if dt <= 0
         throw(ArgumentError("Time step dt must be positive. Got $dt"))
     end

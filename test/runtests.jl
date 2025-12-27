@@ -10,6 +10,20 @@ using LinearAlgebra
         @test J2 > 0
     end
 
+    @testset "Input Validation" begin
+        # Test valid input
+        valid_state = zeros(6)
+        @test_nowarn propagate(valid_state, (0.0, 10.0), 1.0)
+
+        # Test invalid input size (too small)
+        invalid_state_small = zeros(3)
+        @test_throws ArgumentError propagate(invalid_state_small, (0.0, 10.0), 1.0)
+
+        # Test invalid input size (too large)
+        invalid_state_large = zeros(7)
+        @test_throws ArgumentError propagate(invalid_state_large, (0.0, 10.0), 1.0)
+    end
+
     @testset "Circular Orbit Energy Conservation" begin
         # For a circular orbit without perturbations, energy should be constant.
         # With J2, it's not strictly constant but should be close over one orbit.
