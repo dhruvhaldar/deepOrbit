@@ -75,7 +75,7 @@ function generate_ground_track_svg(lats, lons, filename)
             .background { fill: #001f3f; } /* Deep Ocean Blue */
             .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
             .grid { stroke: #333; stroke-width: 1; stroke-dasharray: 4; }
-            .axis-label { fill: #888; font-family: sans-serif; font-size: 12px; }
+            .axis-label { fill: #DDD; font-family: sans-serif; font-size: 12px; }
             .title { fill: #eee; font-family: sans-serif; font-size: 16px; text-anchor: middle; }
         </style>
         
