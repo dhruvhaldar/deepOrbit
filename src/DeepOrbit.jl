@@ -161,13 +161,11 @@ function propagate(initial_state, t_span, dt)
     times = t0:dt:tf
     n_steps = length(times)
     
-    # Pre-allocate states array
-    states = Vector{Vector{Float64}}(undef, n_steps)
-    states[1] = copy(initial_state)
+    # Pre-allocate states array: Allocate all vectors at once to avoid allocation in the loop
+    states = [Vector{Float64}(undef, 6) for _ in 1:n_steps]
+    copyto!(states[1], initial_state)
     
-    # Reusable buffers to avoid allocation in loop
-    current_state = copy(initial_state)
-    next_state = Vector{Float64}(undef, 6)
+    # Reusable buffers for RK4 calculations
     k1 = Vector{Float64}(undef, 6)
     k2 = Vector{Float64}(undef, 6)
     k3 = Vector{Float64}(undef, 6)
@@ -176,13 +174,8 @@ function propagate(initial_state, t_span, dt)
     
     @inbounds for i in 1:(n_steps - 1)
         t = times[i]
-        rk4_step!(next_state, state_derivative!, t, current_state, dt, k1, k2, k3, k4, temp_state)
-
-        # Save result (must allocate a new vector for the results array)
-        states[i+1] = copy(next_state)
-
-        # Update current_state for next step (copy without allocation)
-        copyto!(current_state, next_state)
+        # Direct write to next state vector in the array, using current state from array
+        rk4_step!(states[i+1], state_derivative!, t, states[i], dt, k1, k2, k3, k4, temp_state)
     end
     
     return times, states
