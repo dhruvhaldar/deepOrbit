@@ -31,7 +31,7 @@ function generate_ground_track_svg(lats, lons, filename)
     if length(lats) > 0
         x0 = scale_x(lons[1])
         y0 = scale_y(lats[1])
-        print(path_d, "M $x0 $y0 ")
+        print(path_d, "M ", x0, " ", y0, " ")
         
         # Start Marker (Green Circle)
         print(markers, """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>""")
@@ -46,11 +46,11 @@ function generate_ground_track_svg(lats, lons, filename)
                 # Start new path segment
                 x = scale_x(lon)
                 y = scale_y(lat)
-                print(path_d, "M $x $y ")
+                print(path_d, "M ", x, " ", y, " ")
             else
                 x = scale_x(lon)
                 y = scale_y(lat)
-                print(path_d, "L $x $y ")
+                print(path_d, "L ", x, " ", y, " ")
             end
         end
 
