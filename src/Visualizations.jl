@@ -73,10 +73,13 @@ function generate_ground_track_svg(lats, lons, filename)
         <desc id="svg-desc">A map displaying the satellite's path over the Earth. The path starts at the green circle and ends at the red square.</desc>
         <style>
             .background { fill: #001f3f; } /* Deep Ocean Blue */
-            .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; }
+            .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; transition: stroke-width 0.3s ease, stroke-opacity 0.3s ease; }
+            .track:hover { stroke-width: 4; stroke-opacity: 1; }
             .grid { stroke: #333; stroke-width: 1; stroke-dasharray: 4; }
-            .axis-label { fill: #888; font-family: sans-serif; font-size: 12px; }
+            .axis-label { fill: #DDD; font-family: sans-serif; font-size: 12px; }
             .title { fill: #eee; font-family: sans-serif; font-size: 16px; text-anchor: middle; }
+            circle, rect { transition: all 0.3s ease; cursor: pointer; }
+            circle:hover, rect:hover { stroke-width: 3; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
         </style>
         
         <!-- Background -->
