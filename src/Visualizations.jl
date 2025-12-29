@@ -3,10 +3,27 @@
 
 Generates a standalone SVG file visualizing the satellite ground track.
 Handles the International Date Line crossing by creating discontinuous paths.
+
+Security:
+- Enforces strict type checking (must be Real numbers) to prevent injection.
+- Enforces a maximum number of points to prevent SVG generation Denial of Service (DoS).
+- Enforces input validation (finite numbers) to ensure valid SVG output.
 """
-function generate_ground_track_svg(lats, lons, filename)
+function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractVector{<:Real}, filename::AbstractString)
     if length(lats) != length(lons)
         throw(ArgumentError("Vectors lats and lons must have the same length. Got $(length(lats)) and $(length(lons))."))
+    end
+
+    # Security: Limit maximum points to prevent huge SVG generation (DoS)
+    # 1,000,000 points creates roughly 30-50MB SVG text, which is already heavy for browsers but manageable.
+    MAX_SVG_POINTS = 1_000_000
+    if length(lats) > MAX_SVG_POINTS
+        throw(ArgumentError("Too many points for SVG generation ($(length(lats)) > $MAX_SVG_POINTS). Please downsample the data to prevent memory exhaustion."))
+    end
+
+    # Security: Ensure valid coordinates (no NaNs or Infs)
+    if !all(isfinite, lats) || !all(isfinite, lons)
+        throw(ArgumentError("Coordinates must be finite real numbers (no NaNs or Infs)."))
     end
 
     # Simple Equirectangular projection
