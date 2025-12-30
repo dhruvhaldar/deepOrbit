@@ -24,6 +24,42 @@ using LinearAlgebra
         @test_throws ArgumentError propagate(invalid_state_large, (0.0, 10.0), 1.0)
     end
 
+    @testset "Security Tests" begin
+        # Mock data
+        lats = [0.0, 10.0, 20.0]
+        lons = [0.0, 10.0, 20.0]
+
+        @testset "SVG Extension Enforcement" begin
+            # Test valid extension
+            valid_file = "test_output.svg"
+            if isfile(valid_file)
+                rm(valid_file)
+            end
+            @test_nowarn generate_ground_track_svg(lats, lons, valid_file)
+            @test isfile(valid_file)
+            rm(valid_file)
+
+            # Test valid extension (uppercase)
+            valid_file_caps = "test_output.SVG"
+            if isfile(valid_file_caps)
+                rm(valid_file_caps)
+            end
+            @test_nowarn generate_ground_track_svg(lats, lons, valid_file_caps)
+            @test isfile(valid_file_caps)
+            rm(valid_file_caps)
+
+            # Test invalid extension
+            invalid_file = "test_output.txt"
+            @test_throws ArgumentError generate_ground_track_svg(lats, lons, invalid_file)
+            @test !isfile(invalid_file)
+
+            # Test no extension
+            no_ext_file = "test_output"
+            @test_throws ArgumentError generate_ground_track_svg(lats, lons, no_ext_file)
+            @test !isfile(no_ext_file)
+        end
+    end
+
     @testset "Circular Orbit Energy Conservation" begin
         # For a circular orbit without perturbations, energy should be constant.
         # With J2, it's not strictly constant but should be close over one orbit.

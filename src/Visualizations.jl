@@ -14,6 +14,11 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         throw(ArgumentError("Vectors lats and lons must have the same length. Got $(length(lats)) and $(length(lons))."))
     end
 
+    # Security: Enforce .svg extension to prevent arbitrary file write vulnerabilities
+    if !endswith(lowercase(filename), ".svg")
+        throw(ArgumentError("Output filename must end with .svg to ensure security and correct file type. Got: $filename"))
+    end
+
     # Security: Limit maximum points to prevent huge SVG generation (DoS)
     # 1,000,000 points creates roughly 30-50MB SVG text, which is already heavy for browsers but manageable.
     MAX_SVG_POINTS = 1_000_000
