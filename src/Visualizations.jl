@@ -48,7 +48,10 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
     if length(lats) > 0
         x0 = scale_x(lons[1])
         y0 = scale_y(lats[1])
-        print(path_d, "M $x0 $y0 ")
+        # OPTIMIZATION: Use multi-argument print instead of string interpolation
+        # "M $x0 $y0 " allocates a new string for every point.
+        # print(io, "M ", x0, " ", y0, " ") writes directly to the buffer.
+        print(path_d, "M ", x0, " ", y0, " ")
         
         # Start Marker (Green Circle)
         print(markers, """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>""")
@@ -63,11 +66,13 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
                 # Start new path segment
                 x = scale_x(lon)
                 y = scale_y(lat)
-                print(path_d, "M $x $y ")
+                # OPTIMIZATION: Avoid string interpolation
+                print(path_d, "M ", x, " ", y, " ")
             else
                 x = scale_x(lon)
                 y = scale_y(lat)
-                print(path_d, "L $x $y ")
+                # OPTIMIZATION: Avoid string interpolation
+                print(path_d, "L ", x, " ", y, " ")
             end
         end
 
