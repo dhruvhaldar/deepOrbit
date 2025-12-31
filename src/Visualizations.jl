@@ -26,6 +26,11 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         throw(ArgumentError("Coordinates must be finite real numbers (no NaNs or Infs)."))
     end
 
+    # Security: Ensure filename has .svg extension to prevent arbitrary file write/misleading extensions
+    if !endswith(lowercase(filename), ".svg")
+        throw(ArgumentError("Output filename must end with .svg (got $filename)"))
+    end
+
     # Simple Equirectangular projection
     # Lon: -180 to 180 -> X: 0 to width
     # Lat: -90 to 90   -> Y: height to 0 (SVG Y is down)

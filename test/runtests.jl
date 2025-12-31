@@ -94,4 +94,27 @@ using LinearAlgebra
         @test isapprox(lat, 90.0, atol=1e-5)
         @test isapprox(alt, 100.0, atol=1e-5)
     end
+
+    @testset "Visualizations" begin
+        # Create dummy data
+        lats = [0.0, 10.0, 20.0]
+        lons = [0.0, 10.0, 20.0]
+
+        # Test valid SVG creation
+        valid_file = "test_output.svg"
+        @test_nowarn generate_ground_track_svg(lats, lons, valid_file)
+        @test isfile(valid_file)
+        rm(valid_file)
+
+        # Test invalid extension
+        invalid_file = "test_output.txt"
+        @test_throws ArgumentError generate_ground_track_svg(lats, lons, invalid_file)
+        @test !isfile(invalid_file)
+
+        # Test case insensitivity
+        valid_caps = "test_output.SVG"
+        @test_nowarn generate_ground_track_svg(lats, lons, valid_caps)
+        @test isfile(valid_caps)
+        rm(valid_caps)
+    end
 end
