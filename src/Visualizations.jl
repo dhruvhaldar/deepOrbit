@@ -121,6 +121,19 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         <text x="$(width/2)" y="25" class="title">DeepOrbit Ground Track</text>
         <text x="5" y="$(height/2 - 5)" class="axis-label">Equator</text>
         <text x="$(width/2 + 5)" y="$(height - 10)" class="axis-label">Prime Meridian</text>
+
+        <!-- Legend -->
+        <g transform="translate(10, $(height - 60))">
+            <rect width="70" height="50" fill="#000" fill-opacity="0.3" rx="5" />
+
+            <!-- Start Marker -->
+            <circle cx="15" cy="15" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1" />
+            <text x="25" y="19" class="axis-label" style="font-size: 10px">Start</text>
+
+            <!-- End Marker -->
+            <rect x="11" y="31" width="8" height="8" fill="#FF4136" stroke="#fff" stroke-width="1" />
+            <text x="25" y="39" class="axis-label" style="font-size: 10px">End</text>
+        </g>
     </svg>
     """
     
