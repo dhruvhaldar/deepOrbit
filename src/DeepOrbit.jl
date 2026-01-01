@@ -188,8 +188,11 @@ Converts ECI position to Geodetic coordinates (Latitude, Longitude, Altitude).
 Assumes t=0 corresponds to GMST=0 (Greenwich Meridian aligned with X-axis).
 """
 function eci_to_geodetic(state, t)
-    x, y, z = state[1:3]
-    r = norm([x, y, z])
+    # Optimization: Avoid allocating slice state[1:3] and vector [x,y,z] for norm
+    x = state[1]
+    y = state[2]
+    z = state[3]
+    r = sqrt(x*x + y*y + z*z)
     
     # Calculate Right Ascension and Declination
     declination = asin(z / r)
