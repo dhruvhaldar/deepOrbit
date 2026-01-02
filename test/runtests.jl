@@ -58,6 +58,18 @@ using LinearAlgebra
             @test_throws ArgumentError generate_ground_track_svg(lats, lons, no_ext_file)
             @test !isfile(no_ext_file)
         end
+
+        @testset "Path Traversal Prevention" begin
+            # Test path traversal attempts
+            # Directory traversal
+            @test_throws ArgumentError generate_ground_track_svg(lats, lons, "../test.svg")
+            @test_throws ArgumentError generate_ground_track_svg(lats, lons, "subdir/../../test.svg")
+
+            # Absolute path (platform specific, but generally starts with / on Linux)
+            if Sys.islinux()
+                @test_throws ArgumentError generate_ground_track_svg(lats, lons, "/tmp/test.svg")
+            end
+        end
     end
 
     @testset "Circular Orbit Energy Conservation" begin
