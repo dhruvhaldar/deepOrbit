@@ -64,7 +64,7 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         print(path_d, "M ", x0, " ", y0, " ")
         
         # Start Marker (Green Circle)
-        print(markers, """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1"><title>Start Point</title></circle>""")
+        print(markers, """<circle cx="$x0" cy="$y0" r="4" fill="#2ECC40" stroke="#fff" stroke-width="1" class="marker" tabindex="0"><title>Start Point</title></circle>""")
 
         for i in 2:length(lats)
             lat = lats[i]
@@ -92,7 +92,7 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         # Center the square (8x8) at (xe, ye)
         rect_x = xe - 4
         rect_y = ye - 4
-        print(markers, """<rect x="$rect_x" y="$rect_y" width="8" height="8" fill="#FF4136" stroke="#fff" stroke-width="1"><title>End Point</title></rect>""")
+        print(markers, """<rect x="$rect_x" y="$rect_y" width="8" height="8" fill="#FF4136" stroke="#fff" stroke-width="1" class="marker" tabindex="0"><title>End Point</title></rect>""")
     end
     
     path_d_str = String(take!(path_d))
@@ -106,7 +106,9 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         <style>
             .background { fill: #001f3f; } /* Deep Ocean Blue */
             .track { fill: none; stroke: #FFDC00; stroke-width: 2; stroke-opacity: 0.8; transition: stroke-width 0.3s, stroke-opacity 0.3s; }
-            .track:hover { stroke-width: 4; stroke-opacity: 1.0; }
+            .track:hover, .track:focus { stroke-width: 4; stroke-opacity: 1.0; outline: none; }
+            .marker { transition: stroke-width 0.3s; }
+            .marker:focus { stroke-width: 3; outline: none; }
             .grid { stroke: #333; stroke-width: 1; stroke-dasharray: 4; }
             .axis-label { fill: #DDD; font-family: sans-serif; font-size: 12px; }
             .title { fill: #eee; font-family: sans-serif; font-size: 16px; text-anchor: middle; }
@@ -120,7 +122,7 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         <line x1="$(width/2)" y1="0" x2="$(width/2)" y2="$height" class="grid" aria-hidden="true" /> <!-- Prime Meridian -->
         
         <!-- Ground Track -->
-        <path d="$path_d_str" class="track">
+        <path d="$path_d_str" class="track" tabindex="0">
             <title>Satellite Path</title>
         </path>
         
