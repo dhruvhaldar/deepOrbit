@@ -107,25 +107,37 @@ end
     rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
 
 In-place Runge-Kutta 4 step using pre-allocated buffers.
+Optimized with explicit loops to avoid broadcast overhead on small vectors.
 """
 function rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
     # k1 = f(t, y)
     f!(k1, t, y)
 
+    dt_half = 0.5 * dt
+    dt_sixth = dt / 6.0
+
     # k2 = f(t + 0.5*dt, y + 0.5*dt*k1)
-    @inbounds @. temp_state = y + 0.5 * dt * k1
-    f!(k2, t + 0.5 * dt, temp_state)
+    @inbounds for i in eachindex(y)
+        temp_state[i] = y[i] + dt_half * k1[i]
+    end
+    f!(k2, t + dt_half, temp_state)
 
     # k3 = f(t + 0.5*dt, y + 0.5*dt*k2)
-    @inbounds @. temp_state = y + 0.5 * dt * k2
-    f!(k3, t + 0.5 * dt, temp_state)
+    @inbounds for i in eachindex(y)
+        temp_state[i] = y[i] + dt_half * k2[i]
+    end
+    f!(k3, t + dt_half, temp_state)
 
     # k4 = f(t + dt, y + dt*k3)
-    @inbounds @. temp_state = y + dt * k3
+    @inbounds for i in eachindex(y)
+        temp_state[i] = y[i] + dt * k3[i]
+    end
     f!(k4, t + dt, temp_state)
 
     # y_next = y + (dt/6)*(k1 + 2k2 + 2k3 + k4)
-    @inbounds @. next_state = y + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+    @inbounds for i in eachindex(y)
+        next_state[i] = y[i] + dt_sixth * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+    end
     return nothing
 end
 
