@@ -143,3 +143,5 @@ using LinearAlgebra
         @test isapprox(alt, 100.0, atol=1e-5)
     end
 end
+
+include("test_security_symlink.jl")

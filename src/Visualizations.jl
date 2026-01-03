@@ -41,6 +41,11 @@ function generate_ground_track_svg(lats::AbstractVector{<:Real}, lons::AbstractV
         throw(ArgumentError("Security violation: Path traversal and absolute paths are not allowed. Filename must be relative and strictly within the current directory tree."))
     end
 
+    # Security: Prevent symlink attacks (overwriting arbitrary files)
+    if islink(filename)
+        throw(ArgumentError("Security violation: Symlinks are not allowed. Got: $filename"))
+    end
+
     # Simple Equirectangular projection
     # Lon: -180 to 180 -> X: 0 to width
     # Lat: -90 to 90   -> Y: height to 0 (SVG Y is down)
