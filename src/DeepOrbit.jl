@@ -74,9 +74,11 @@ function state_derivative!(dstate, t, state)
     term_z = 5 * z2_r2
 
     # Factor out common terms
-    ax = x * (c1 + c2 * (term_z - 1))
-    ay = y * (c1 + c2 * (term_z - 1))
-    az = z * (c1 + c2 * (term_z - 3))
+    # Optimization: reused common term for ax and ay, and simplified az
+    common_term = c1 + c2 * (term_z - 1)
+    ax = x * common_term
+    ay = y * common_term
+    az = z * (common_term - 2 * c2)
 
     @inbounds begin
         dstate[1] = vx
@@ -117,25 +119,26 @@ function rk4_step!(next_state, f!, t, y, dt, k1, k2, k3, k4, temp_state)
     dt_sixth = dt / 6.0
 
     # k2 = f(t + 0.5*dt, y + 0.5*dt*k1)
-    @inbounds for i in eachindex(y)
+    # Optimization: @simd allows vectorization of the loop
+    @inbounds @simd for i in eachindex(y)
         temp_state[i] = y[i] + dt_half * k1[i]
     end
     f!(k2, t + dt_half, temp_state)
 
     # k3 = f(t + 0.5*dt, y + 0.5*dt*k2)
-    @inbounds for i in eachindex(y)
+    @inbounds @simd for i in eachindex(y)
         temp_state[i] = y[i] + dt_half * k2[i]
     end
     f!(k3, t + dt_half, temp_state)
 
     # k4 = f(t + dt, y + dt*k3)
-    @inbounds for i in eachindex(y)
+    @inbounds @simd for i in eachindex(y)
         temp_state[i] = y[i] + dt * k3[i]
     end
     f!(k4, t + dt, temp_state)
 
     # y_next = y + (dt/6)*(k1 + 2k2 + 2k3 + k4)
-    @inbounds for i in eachindex(y)
+    @inbounds @simd for i in eachindex(y)
         next_state[i] = y[i] + dt_sixth * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
     end
     return nothing
